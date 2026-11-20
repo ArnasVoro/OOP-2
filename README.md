@@ -263,5 +263,11 @@ Naudojamos efektyvesnės konteinerių operacijos ir STL algoritmai, siekiant sum
 | v1.0 | Palygintos skirtingos STL algoritmų realizacijos, atlikti našumo testai |
 
 
+## Struct ir class palyginimai
+<img width="461" height="203" alt="image" src="https://github.com/user-attachments/assets/21e30fba-7567-4841-ac65-412fdcf795f2" />
+<img width="633" height="199" alt="image" src="https://github.com/user-attachments/assets/aca6906a-c233-4009-8413-646fe8991764" />
+<img width="471" height="155" alt="image" src="https://github.com/user-attachments/assets/cf4da6bd-5546-4117-bdf7-925094fc3883" />
+
+
 
 
