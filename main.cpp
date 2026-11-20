@@ -3,160 +3,170 @@
 #include "Testavimas.h"
 
 #include <iostream>
-#include <vector>
+#include <limits>
 #include <list>
-#include <string>
-#include <cstdlib>
-#include <ctime>
 #include <stdexcept>
+#include <string>
 #include <utility>
+#include <vector>
 
-using std::cout;
-using std::cin;
-using std::string;
-using std::vector;
-using std::list;
-
-// Iprastas rezimas.
-
-template <typename Container>
-void iprastasRezymas(Container& studentai)
+namespace
 {
-    cout << "\n1 - Nuskaityti is kursiokai.txt\n";
-    cout << "2 - Ivesti studentus rankiniu budu\n";
-    cout << "Pasirinkite: ";
-
-    int budas;
-    cin >> budas;
-
-    if (budas == 1)
+    template <typename Container>
+    void iprastasRezymas(Container& studentai)
     {
-        nuskaitytiIsFailo("kursiokai.txt", studentai);
-    }
-    else if (budas == 2)
-    {
-        int n;
+        std::cout << "\n1 - Nuskaityti is kursiokai.txt\n"
+            << "2 - Ivesti studentus rankiniu budu\nPasirinkite: ";
 
-        cout << "Studentu skaicius: ";
-        cin >> n;
+        int budas;
+        if (!(std::cin >> budas))
+            throw std::runtime_error("Neteisinga ivestis.");
 
-        if (n <= 0)
-            return;
-
-        for (int i = 0; i < n; i++)
+        if (budas == 1)
         {
-            Studentas A;
+            nuskaitytiIsFailo("kursiokai.txt", studentai);
+        }
+        else if (budas == 2)
+        {
+            int n;
+            std::cout << "Studentu skaicius: ";
 
-            cout << "\nVardas ir pavarde: ";
-            cin >> A.vardas >> A.pavarde;
-
-            int kiek;
-
-            cout << "Namu darbu pazymiu skaicius: ";
-            cin >> kiek;
-
-            for (int j = 0; j < kiek; j++)
+            if (!(std::cin >> n) || n <= 0)
             {
-                int p;
+                std::cout << "Neteisingas studentu skaicius.\n";
+                return;
+            }
+
+            for (int i = 0; i < n; ++i)
+            {
+                std::string vardas, pavarde;
+
+                std::cout << "\nVardas ir pavarde: ";
+                if (!(std::cin >> vardas >> pavarde))
+                    throw std::runtime_error("Neteisinga ivestis.");
+
+                int kiek;
+                std::cout << "Namu darbu pazymiu skaicius: ";
+
+                if (!(std::cin >> kiek) || kiek < 0)
+                    throw std::runtime_error("Neteisingas pazymiu skaicius.");
+
+                std::vector<int> nd;
+                nd.reserve(static_cast<std::size_t>(kiek));
+
+                for (int j = 0; j < kiek; ++j)
+                {
+                    int pazymys;
+
+                    do
+                    {
+                        std::cout << "Pazymys (1-10): ";
+
+                        if (!(std::cin >> pazymys))
+                            throw std::runtime_error("Neteisinga ivestis.");
+
+                    } while (pazymys < 1 || pazymys > 10);
+
+                    nd.push_back(pazymys);
+                }
+
+                int egzaminas;
 
                 do
                 {
-                    cout << "Pazymys (1-10): ";
-                    cin >> p;
-                } while (p < 1 || p > 10);
+                    std::cout << "Egzamino pazymys (1-10): ";
 
-                A.paz.push_back(p);
+                    if (!(std::cin >> egzaminas))
+                        throw std::runtime_error("Neteisinga ivestis.");
+
+                } while (egzaminas < 1 || egzaminas > 10);
+
+                studentai.emplace_back(
+                    std::move(vardas),
+                    std::move(pavarde),
+                    std::move(nd),
+                    egzaminas
+                );
             }
-
-            int egz;
-
-            do
-            {
-                cout << "Egzamino pazymys (1-10): ";
-                cin >> egz;
-            } while (egz < 1 || egz > 10);
-
-            A.paz.push_back(egz);
-
-            skaiciuotiGalutinius(A);
-
-            studentai.push_back(std::move(A));
         }
-    }
-    else
-    {
-        cout << "Tokio pasirinkimo nera.\n";
-        return;
-    }
+        else
+        {
+            std::cout << "Tokio pasirinkimo nera.\n";
+            return;
+        }
 
-    int kriterijus;
+        if (studentai.empty())
+        {
+            std::cout << "Studentu sarasas tuscias.\n";
+            return;
+        }
 
-    cout << "\nSkirstyti pagal:\n";
-    cout << "1 - Galutini vidurki\n";
-    cout << "2 - Galutine mediana\n";
-    cout << "Pasirinkite: ";
+        int kriterijus;
 
-    cin >> kriterijus;
+        std::cout << "\nSkirstyti pagal:\n"
+            << "1 - Galutini vidurki\n"
+            << "2 - Galutine mediana\n"
+            << "Pasirinkite: ";
 
-    if (kriterijus != 1 && kriterijus != 2)
-    {
-        cout << "Tokio pasirinkimo nera.\n";
-        return;
-    }
+        if (!(std::cin >> kriterijus) ||
+            (kriterijus != 1 && kriterijus != 2))
+        {
+            std::cout << "Tokio pasirinkimo nera.\n";
+            return;
+        }
 
-    int strategija;
+        int strategija;
 
-    cout << "\nPasirinkite skirstymo strategija:\n";
-    cout << "1 - Kopijuoti i du naujus konteinerius\n";
-    cout << "2 - Kopijuoti vargsiukus ir istrinti is pradinio\n";
-    cout << "3 - Optimizuotas skirstymas\n";
-    cout << "Pasirinkite: ";
+        std::cout << "\nPasirinkite skirstymo strategija:\n"
+            << "1 - Kopijuoti i du naujus konteinerius\n"
+            << "2 - Kopijuoti vargsiukus ir pasalinti is pradinio\n"
+            << "3 - Optimizuotas skirstymas\n"
+            << "Pasirinkite: ";
 
-    cin >> strategija;
+        if (!(std::cin >> strategija) ||
+            strategija < 1 || strategija > 3)
+        {
+            std::cout << "Tokio pasirinkimo nera.\n";
+            return;
+        }
 
-    if (strategija < 1 || strategija > 3)
-    {
-        cout << "Tokio pasirinkimo nera.\n";
-        return;
-    }
+        Container vargsiukai, kietiakiai;
 
-    Container vargsiukai;
-    Container kietiakiai;
+        skirstytiIGrupes(
+            studentai,
+            vargsiukai,
+            kietiakiai,
+            kriterijus,
+            strategija
+        );
 
-    skirstytiIGrupes(
-        studentai,
-        vargsiukai,
-        kietiakiai,
-        kriterijus,
-        strategija
-    );
+        if (strategija != 1)
+            kietiakiai = studentai;
 
-    issaugotiIFaila("vargsiukai.txt", vargsiukai);
-
-    if (strategija == 1)
+        issaugotiIFaila("vargsiukai.txt", vargsiukai);
         issaugotiIFaila("kietiakiai.txt", kietiakiai);
-    else
-        issaugotiIFaila("kietiakiai.txt", studentai);
 
-    cout << "\nStudentai suskirstyti.\n";
-    cout << "Rezultatai issaugoti:\n";
-    cout << "vargsiukai.txt\n";
-    cout << "kietiakiai.txt\n";
+        std::cout << "\nStudentai suskirstyti.\n"
+            << "Vargsiukai: " << vargsiukai.size()
+            << "\nKietiakai: " << kietiakiai.size()
+            << "\nRezultatai issaugoti vargsiukai.txt ir kietiakiai.txt\n";
+    }
 }
 
 int main()
 {
-    srand(static_cast<unsigned int>(time(0)));
-
-    cout << "========== STUDENTU PROGRAMA v1.0 ==========\n\n";
-
-    cout << "1 - Iprastas rezimas\n";
-    cout << "2 - Testavimo rezimas\n";
-
-    cout << "\nPasirinkite rezima: ";
+    std::cout << "========== STUDENTU PROGRAMA v1.1 ==========\n\n"
+        << "1 - Iprastas rezimas\n"
+        << "2 - Testavimo rezimas\n"
+        << "Pasirinkite rezima: ";
 
     int rezimas;
-    cin >> rezimas;
+
+    if (!(std::cin >> rezimas))
+    {
+        std::cout << "Neteisinga ivestis.\n";
+        return 1;
+    }
 
     try
     {
@@ -164,51 +174,52 @@ int main()
         {
             int konteineris;
 
-            cout << "\nPasirinkite konteineri:\n";
-            cout << "1 - vector\n";
-            cout << "2 - list\n";
-            cout << "Pasirinkite: ";
+            std::cout << "\nPasirinkite konteineri:\n"
+                << "1 - vector\n"
+                << "2 - list\n"
+                << "Pasirinkite: ";
 
-            cin >> konteineris;
+            if (!(std::cin >> konteineris))
+                throw std::runtime_error("Neteisinga ivestis.");
 
             if (konteineris == 1)
             {
-                vector<Studentas> studentai;
+                std::vector<Studentas> studentai;
                 iprastasRezymas(studentai);
             }
             else if (konteineris == 2)
             {
-                list<Studentas> studentai;
+                std::list<Studentas> studentai;
                 iprastasRezymas(studentai);
             }
             else
             {
-                cout << "Tokio pasirinkimo nera.\n";
+                std::cout << "Tokio pasirinkimo nera.\n";
             }
         }
         else if (rezimas == 2)
         {
             int kartai;
 
-            cout << "\nKiek kartu kartoti kiekviena testa? ";
-            cin >> kartai;
+            std::cout << "\nKiek kartu kartoti kiekviena testa? ";
 
-            if (kartai <= 0)
+            if (!(std::cin >> kartai) || kartai <= 0)
             {
-                cout << "Testu skaicius turi buti teigiamas.\n";
-                return 0;
+                std::cout << "Testu skaicius turi buti teigiamas.\n";
+                return 1;
             }
 
             testuotiKeliskart(kartai);
         }
         else
         {
-            cout << "Tokio pasirinkimo nera.\n";
+            std::cout << "Tokio pasirinkimo nera.\n";
         }
     }
     catch (const std::exception& e)
     {
-        cout << "\nKLAIDA: " << e.what() << '\n';
+        std::cerr << "\nKLAIDA: " << e.what() << '\n';
+        return 1;
     }
 
     return 0;
