@@ -2,137 +2,283 @@
 
 #include <algorithm>
 #include <fstream>
-#include <sstream>
 #include <iomanip>
+#include <sstream>
 #include <stdexcept>
 #include <utility>
 
-double skaiciuotiVidurki(const Studentas& A)
+Studentas::Studentas() noexcept
+    : vardas_(), pavarde_(), namuDarbai_(), egzaminas_(0),
+    galutinisVid_(0.0), galutinisMed_(0.0)
 {
-    if (A.paz.size() <= 1) return 0.0;
+}
+
+Studentas::Studentas(std::string vardas, std::string pavarde,
+    std::vector<int> namuDarbai, int egzaminas)
+    : vardas_(std::move(vardas)), pavarde_(std::move(pavarde)),
+    namuDarbai_(std::move(namuDarbai)), egzaminas_(egzaminas),
+    galutinisVid_(0.0), galutinisMed_(0.0)
+{
+    if (vardas_.empty() || pavarde_.empty())
+        throw std::invalid_argument(
+            "Studento vardas ir pavarde negali buti tusti.");
+
+    if (egzaminas_ < 1 || egzaminas_ > 10)
+        throw std::invalid_argument(
+            "Egzamino pazymys turi buti nuo 1 iki 10.");
+
+    for (int pazymys : namuDarbai_)
+        if (pazymys < 1 || pazymys > 10)
+            throw std::invalid_argument(
+                "Namu darbu pazymiai turi buti nuo 1 iki 10.");
+
+    apskaiciuotiGalutinius();
+}
+
+Studentas::Studentas(const Studentas& kitas)
+    : vardas_(kitas.vardas_), pavarde_(kitas.pavarde_),
+    namuDarbai_(kitas.namuDarbai_), egzaminas_(kitas.egzaminas_),
+    galutinisVid_(kitas.galutinisVid_),
+    galutinisMed_(kitas.galutinisMed_)
+{
+}
+
+Studentas::Studentas(Studentas&& kitas) noexcept
+    : vardas_(std::move(kitas.vardas_)),
+    pavarde_(std::move(kitas.pavarde_)),
+    namuDarbai_(std::move(kitas.namuDarbai_)),
+    egzaminas_(kitas.egzaminas_),
+    galutinisVid_(kitas.galutinisVid_),
+    galutinisMed_(kitas.galutinisMed_)
+{
+}
+
+Studentas& Studentas::operator=(const Studentas& kitas)
+{
+    if (this != &kitas)
+    {
+        vardas_ = kitas.vardas_;
+        pavarde_ = kitas.pavarde_;
+        namuDarbai_ = kitas.namuDarbai_;
+        egzaminas_ = kitas.egzaminas_;
+        galutinisVid_ = kitas.galutinisVid_;
+        galutinisMed_ = kitas.galutinisMed_;
+    }
+
+    return *this;
+}
+
+Studentas& Studentas::operator=(Studentas&& kitas) noexcept
+{
+    if (this != &kitas)
+    {
+        vardas_ = std::move(kitas.vardas_);
+        pavarde_ = std::move(kitas.pavarde_);
+        namuDarbai_ = std::move(kitas.namuDarbai_);
+        egzaminas_ = kitas.egzaminas_;
+        galutinisVid_ = kitas.galutinisVid_;
+        galutinisMed_ = kitas.galutinisMed_;
+    }
+
+    return *this;
+}
+
+Studentas::~Studentas() = default;
+
+const std::string& Studentas::vardas() const noexcept
+{
+    return vardas_;
+}
+
+const std::string& Studentas::pavarde() const noexcept
+{
+    return pavarde_;
+}
+
+const std::vector<int>& Studentas::namuDarbai() const noexcept
+{
+    return namuDarbai_;
+}
+
+int Studentas::egzaminoPazymys() const noexcept
+{
+    return egzaminas_;
+}
+
+double Studentas::galutinisVidurkis() const noexcept
+{
+    return galutinisVid_;
+}
+
+double Studentas::galutineMediana() const noexcept
+{
+    return galutinisMed_;
+}
+
+double Studentas::skaiciuotiVidurki(
+    const std::vector<int>& pazymiai)
+{
+    if (pazymiai.empty())
+        return 0.0;
 
     double suma = 0.0;
 
-    for (size_t i = 0; i < A.paz.size() - 1; i++)
-        suma += A.paz[i];
+    for (int pazymys : pazymiai)
+        suma += pazymys;
 
-    return suma / (A.paz.size() - 1);
+    return suma / pazymiai.size();
 }
 
-double skaiciuotiMediana(const Studentas& A)
+double Studentas::skaiciuotiMediana(
+    const std::vector<int>& pazymiai)
 {
-    if (A.paz.size() <= 1) return 0.0;
+    if (pazymiai.empty())
+        return 0.0;
 
-    vector<int> nd;
+    std::vector<int> kopija = pazymiai;
 
-    for (size_t i = 0; i < A.paz.size() - 1; i++)
-        nd.push_back(A.paz[i]);
+    std::sort(kopija.begin(), kopija.end());
 
-    std::sort(nd.begin(), nd.end());
+    const std::size_t vidurys = kopija.size() / 2;
 
-    int n = static_cast<int>(nd.size());
+    if (kopija.size() % 2 == 1)
+        return kopija[vidurys];
 
-    if (n % 2 == 1)
-        return nd[n / 2];
-
-    return (nd[n / 2 - 1] + nd[n / 2]) / 2.0;
+    return (kopija[vidurys - 1] + kopija[vidurys]) / 2.0;
 }
 
-bool rikiuotiPagalVarda(const Studentas& A, const Studentas& B)
+void Studentas::apskaiciuotiGalutinius()
 {
-    if (A.vardas != B.vardas)
-        return A.vardas < B.vardas;
+    galutinisVid_ =
+        0.4 * skaiciuotiVidurki(namuDarbai_) +
+        0.6 * egzaminas_;
 
-    return A.pavarde < B.pavarde;
+    galutinisMed_ =
+        0.4 * skaiciuotiMediana(namuDarbai_) +
+        0.6 * egzaminas_;
 }
 
-void skaiciuotiGalutinius(Studentas& A)
+bool rikiuotiPagalVarda(const Studentas& a, const Studentas& b)
 {
-    if (A.paz.empty()) return;
+    if (a.vardas() != b.vardas())
+        return a.vardas() < b.vardas();
 
-    int egz = A.paz.back();
-
-    A.galutinisVid = 0.4 * skaiciuotiVidurki(A) + 0.6 * egz;
-    A.galutinisMed = 0.4 * skaiciuotiMediana(A) + 0.6 * egz;
+    return a.pavarde() < b.pavarde();
 }
 
 template <typename Container>
-void nuskaityti(const string& failas, Container& grupe)
+void nuskaityti(const std::string& failas, Container& grupe)
 {
     std::ifstream f(failas);
 
     if (!f)
-        throw std::runtime_error("Nepavyko atidaryti failo: " + failas);
+        throw std::runtime_error(
+            "Nepavyko atidaryti failo: " + failas);
 
     grupe.clear();
 
-    string eilute;
+    std::string eilute;
     std::getline(f, eilute);
 
     while (std::getline(f, eilute))
     {
-        if (eilute.empty()) continue;
+        if (eilute.empty())
+            continue;
 
         std::stringstream ss(eilute);
 
-        Studentas A;
+        std::string vardas, pavarde;
 
-        ss >> A.vardas >> A.pavarde;
+        if (!(ss >> vardas >> pavarde))
+            continue;
+
+        std::vector<int> pazymiai;
 
         int pazymys;
+        bool neteisingas = false;
 
         while (ss >> pazymys)
-            A.paz.push_back(pazymys);
-
-        if (!A.vardas.empty() && !A.pavarde.empty() && !A.paz.empty())
         {
-            skaiciuotiGalutinius(A);
-            grupe.push_back(std::move(A));
+            if (pazymys < 1 || pazymys > 10)
+            {
+                neteisingas = true;
+                break;
+            }
+
+            pazymiai.push_back(pazymys);
         }
+
+        if (neteisingas || !ss.eof() || pazymiai.empty())
+            continue;
+
+        const int egzaminas = pazymiai.back();
+
+        pazymiai.pop_back();
+
+        grupe.emplace_back(
+            std::move(vardas),
+            std::move(pavarde),
+            std::move(pazymiai),
+            egzaminas);
     }
 }
 
-void nuskaitytiIsFailo(const string& failas, vector<Studentas>& grupe)
+void nuskaitytiIsFailo(
+    const std::string& failas,
+    std::vector<Studentas>& grupe)
 {
     nuskaityti(failas, grupe);
 }
 
-void nuskaitytiIsFailo(const string& failas, list<Studentas>& grupe)
+void nuskaitytiIsFailo(
+    const std::string& failas,
+    std::list<Studentas>& grupe)
 {
     nuskaityti(failas, grupe);
 }
 
 template <typename Container>
-void issaugoti(const string& failas, const Container& grupe)
+void issaugoti(
+    const std::string& failas,
+    const Container& grupe)
 {
     std::ofstream f(failas);
 
     if (!f)
-        throw std::runtime_error("Nepavyko sukurti failo: " + failas);
+        throw std::runtime_error(
+            "Nepavyko sukurti failo: " + failas);
 
-    f << std::left << std::setw(15) << "Pavarde"
+    f << std::left
+        << std::setw(15) << "Pavarde"
         << std::setw(15) << "Vardas"
         << std::setw(20) << "Galutinis (Vid.)"
-        << std::setw(20) << "Galutinis (Med.)" << '\n';
+        << std::setw(20) << "Galutinis (Med.)"
+        << '\n';
 
-    f << string(70, '-') << '\n';
+    f << std::string(70, '-') << '\n';
 
-    for (const Studentas& A : grupe)
+    for (const Studentas& s : grupe)
     {
-        f << std::left << std::setw(15) << A.pavarde
-            << std::setw(15) << A.vardas
-            << std::setw(20) << std::fixed << std::setprecision(2)
-            << A.galutinisVid
-            << std::setw(20) << A.galutinisMed << '\n';
+        f << std::left
+            << std::setw(15) << s.pavarde()
+            << std::setw(15) << s.vardas()
+            << std::fixed << std::setprecision(2)
+            << std::setw(20) << s.galutinisVidurkis()
+            << std::setw(20) << s.galutineMediana()
+            << '\n';
     }
 }
 
-void issaugotiIFaila(const string& failas, const vector<Studentas>& grupe)
+void issaugotiIFaila(
+    const std::string& failas,
+    const std::vector<Studentas>& grupe)
 {
     issaugoti(failas, grupe);
 }
 
-void issaugotiIFaila(const string& failas, const list<Studentas>& grupe)
+void issaugotiIFaila(
+    const std::string& failas,
+    const std::list<Studentas>& grupe)
 {
     issaugoti(failas, grupe);
 }
