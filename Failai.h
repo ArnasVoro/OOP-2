@@ -4,7 +4,7 @@
 
 #include <list>
 #include <vector>
-int file;
+
 void generuotiTestiniusFailus(
     const std::vector<int>& pasirinktiFailai
 );
