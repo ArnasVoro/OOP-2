@@ -2,11 +2,12 @@
 
 #include "Studentas.h"
 
-#include <string>
-#include <vector>
 #include <list>
-
-void generuotiTestiniusFailus(const std::vector<int>& pasirinktiFailai);
+#include <vector>
+int file;
+void generuotiTestiniusFailus(
+    const std::vector<int>& pasirinktiFailai
+);
 
 void skirstytiIGrupes(
     std::vector<Studentas>& grupe,
